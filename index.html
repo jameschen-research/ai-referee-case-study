@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Can a Model Referee a Materials Paper?</title>
+<meta name="description" content="Case study: an expert's frozen issue list, a frontier model's review and the journal referees' reports of one Nature Communications paper compared, with implications for scalable oversight.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,500..800&family=IBM+Plex+Mono:wght@400;500&family=Literata:ital,opsz,wght@0,7..72,400;0,7..72,600;1,7..72,400&display=swap" rel="stylesheet">
+<style>
+/* Layout idea: a referee's worksheet. One reading column, wide exhibits break out of it; issue IDs and counts set in mono like a scoring sheet. Three source colors carry through every exhibit. */
+:root{
+  --paper:#f3f4f1; --sheet:#fbfbf9; --ink:#1a1e22; --muted:#596169; --rule:#d3d8d4;
+  --expert:#0d6b66; --ai:#b8670a; --ref:#5a4ea3; --flag:#b3261e;
+  --display:"Archivo","Arial Narrow",Arial,sans-serif;
+  --body:"Literata",Georgia,"Times New Roman",serif;
+  --mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --paper:#14171a; --sheet:#1b1f23; --ink:#e7e9e6; --muted:#9aa3aa; --rule:#323a40;
+    --expert:#4fb8b0; --ai:#e9a24a; --ref:#a79cf0; --flag:#f08a80; color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#14171a; --sheet:#1b1f23; --ink:#e7e9e6; --muted:#9aa3aa; --rule:#323a40;
+  --expert:#4fb8b0; --ai:#e9a24a; --ref:#a79cf0; --flag:#f08a80; color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--paper);color:var(--ink);font-family:var(--body);font-size:17px;line-height:1.6;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1040px;margin:0 auto;padding:0 20px}
+.col{max-width:680px}
+h1,h2,h3{font-family:var(--display);text-wrap:balance;line-height:1.08;margin:0}
+h1{font-size:clamp(34px,5.4vw,58px);font-weight:800;font-stretch:78%;letter-spacing:-.01em}
+h2{font-size:clamp(24px,3vw,32px);font-weight:700;font-stretch:85%;margin-bottom:14px}
+h3{font-size:18px;font-weight:700;font-stretch:90%;margin-bottom:6px}
+p{margin:0 0 14px}
+.mono{font-family:var(--mono);font-size:.82em;letter-spacing:.01em}
+.label{font-family:var(--mono);font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+a{color:inherit;text-decoration-color:var(--muted);text-underline-offset:3px}
+a:focus-visible,button:focus-visible{outline:2px solid var(--ai);outline-offset:2px}
+.e{color:var(--expert)} .a{color:var(--ai)} .r{color:var(--ref)}
+strong{font-weight:600}
+
+header{padding:56px 0 28px;border-bottom:1px solid var(--rule)}
+.byline{margin-top:18px;color:var(--muted);font-size:15px}
+.dek{font-size:20px;line-height:1.5;margin-top:18px;max-width:680px}
+
+.hero{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.05fr);gap:40px;align-items:center;padding:36px 0 44px;border-bottom:1px solid var(--rule)}
+.tiles{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--rule);border:1px solid var(--rule)}
+.tile{background:var(--sheet);padding:16px 16px 14px}
+.tile .n{font-family:var(--display);font-weight:800;font-stretch:75%;font-size:40px;line-height:1;font-variant-numeric:tabular-nums}
+.tile .t{font-size:14px;line-height:1.4;margin-top:6px;color:var(--muted)}
+figure{margin:0}
+figcaption{font-size:14px;color:var(--muted);margin-top:10px;line-height:1.45}
+svg{max-width:100%;height:auto;display:block}
+
+section{padding:44px 0;border-bottom:1px solid var(--rule)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:28px}
+.card{background:var(--sheet);border:1px solid var(--rule);padding:16px 18px}
+.card .who{font-family:var(--display);font-weight:700;font-stretch:85%;font-size:19px}
+.card ul{margin:8px 0 0;padding-left:18px;font-size:15px}
+.sources{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin-top:8px}
+.sources .card{border-top:4px solid}
+.sources .card.e{border-top-color:var(--expert)} .sources .card.a{border-top-color:var(--ai)} .sources .card.r{border-top-color:var(--ref)}
+.sources .card p{color:var(--ink);font-size:15px;margin:6px 0 0}
+
+/* bars */
+.bars{display:grid;gap:22px;margin-top:6px}
+.barset h3{margin-bottom:10px}
+.bar{display:grid;grid-template-columns:92px 1fr 64px;align-items:center;gap:10px;margin:6px 0;font-size:15px}
+.track{height:16px;background:color-mix(in srgb,var(--rule) 55%,transparent);position:relative}
+.fill{position:absolute;inset:0 auto 0 0}
+.fill.e{background:var(--expert)} .fill.a{background:var(--ai)} .fill.r{background:var(--ref)}
+.bar .v{font-family:var(--mono);font-size:13px;font-variant-numeric:tabular-nums;text-align:right}
+
+/* matrix */
+.scroll{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:14.5px}
+th{font-family:var(--mono);font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:500;text-align:left;padding:8px 8px;border-bottom:1px solid var(--ink)}
+td{padding:7px 8px;border-bottom:1px solid var(--rule);vertical-align:middle}
+td.id{font-family:var(--mono);font-size:12.5px;white-space:nowrap}
+td.dot,th.dot{text-align:center;width:54px}
+tr.miss td:first-child{box-shadow:inset 4px 0 0 var(--flag)}
+tr.miss td.lab{font-weight:600}
+.sev{font-family:var(--mono);font-size:11px;color:var(--muted)}
+.d{display:inline-block;width:14px;height:14px;border-radius:50%;border:2px solid var(--ai);vertical-align:middle}
+.d.y{background:var(--ai)}
+.d.p{background:linear-gradient(90deg,var(--ai) 50%,transparent 50%)}
+.d.n{border-color:color-mix(in srgb,var(--muted) 60%,transparent)}
+.d.ry{border-color:var(--ref);background:var(--ref)}
+.d.rn{border-color:color-mix(in srgb,var(--muted) 35%,transparent)}
+.legend{display:flex;flex-wrap:wrap;gap:16px;font-size:13.5px;color:var(--muted);margin:10px 0 4px}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.stripe{display:inline-block;width:4px;height:14px;background:var(--flag)}
+
+/* category chart */
+.cats{display:grid;gap:14px}
+.cat{display:grid;grid-template-columns:200px 1fr;gap:14px;align-items:center}
+.cat .nm{font-size:15px;line-height:1.3}
+.cat .nm .mono{color:var(--muted)}
+.mini{display:grid;gap:3px}
+.mini .row{display:grid;grid-template-columns:1fr 26px;gap:6px;align-items:center}
+.mini .track{height:9px}
+.mini .v{font-family:var(--mono);font-size:11.5px;color:var(--muted);text-align:right;font-variant-numeric:tabular-nums}
+
+/* stacked */
+.stack{display:flex;height:26px;margin:8px 0 6px;border:1px solid var(--rule)}
+.stack div{display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:12px;color:#fff}
+.s-yes{background:var(--ref)} .s-part{background:color-mix(in srgb,var(--ref) 55%,var(--paper))} .s-no{background:color-mix(in srgb,var(--muted) 45%,var(--paper));color:var(--ink)!important}
+.s-part{color:var(--ink)!important}
+
+ol.findings,ul.plain{padding-left:20px;margin:0 0 14px}
+ol.findings li,ul.plain li{margin-bottom:8px}
+.note{border-left:3px solid var(--ai);padding:4px 0 4px 14px;margin:18px 0;font-size:15.5px}
+.q{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+tbody.num td:not(:first-child){text-align:right;font-variant-numeric:tabular-nums}
+thead th.r{text-align:right}
+tr.tot td{font-weight:600;border-top:1px solid var(--ink)}
+tr.grp td{font-family:var(--mono);font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);padding-top:16px;border-bottom:1px solid var(--rule)}
+td.cat{font-size:13.5px;color:var(--muted)}
+.fill.part{background:color-mix(in srgb,var(--ai) 38%,transparent);background-image:repeating-linear-gradient(135deg,transparent 0 4px,color-mix(in srgb,var(--ai) 55%,transparent) 4px 6px)}
+.formula{font-family:var(--mono);font-size:13.5px;background:var(--sheet);border:1px solid var(--rule);padding:10px 14px;margin:6px 0 12px;overflow-x:auto;white-space:nowrap}
+.cite{font-size:15.5px;background:var(--sheet);border:1px solid var(--rule);padding:12px 16px;margin:10px 0 0}
+footer p{max-width:760px}
+footer{padding:36px 0 56px;color:var(--muted);font-size:14.5px}
+
+@media (max-width:820px){
+  .hero,.grid2{grid-template-columns:1fr}
+  .sources,.q{grid-template-columns:1fr}
+  .cat{grid-template-columns:1fr;gap:6px}
+}
+@media (max-width:420px){
+  body{font-size:16px}
+  .bar{grid-template-columns:76px 1fr 56px}
+  .tile .n{font-size:32px}
+}
+@media (prefers-reduced-motion:no-preference){
+  .fill{transform-origin:left;animation:grow .7s ease-out both}
+  @keyframes grow{from{transform:scaleX(.001)}to{transform:scaleX(1)}}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <div class="label">Case study · Expert oversight of AI scientific review · November 2026</div>
+  <h1 style="margin-top:14px">The model checked the text.<br>It missed the process underneath.</h1>
+  <p class="dek">I asked a frontier model to referee a published experimental paper in my field, three times, and scored its review against my own frozen issue list and against the journal’s published referee reports. Counting partial matches, the model touched more of the critical issues than the referees did. The issues it missed in every run all required reasoning about what physically happens to the material during processing and scale-up.</p>
+  <div class="byline">James Chen, Ph.D., P.Eng., FCAE · Independent case study · One paper, one model, one rater</div>
+</header>
+
+<div class="hero">
+  <figure>
+    <svg viewBox="0 0 520 440" role="img" aria-label="Venn diagram of 66 distinct issues: expert only 1, AI only 28, referees only 13, expert and AI 11, expert and referees 5, AI and referees 6, all three 2.">
+      <g fill-opacity=".13" stroke-width="2">
+        <circle cx="200" cy="165" r="135" fill="var(--expert)" stroke="var(--expert)"/>
+        <circle cx="320" cy="165" r="135" fill="var(--ai)" stroke="var(--ai)"/>
+        <circle cx="260" cy="268" r="135" fill="var(--ref)" stroke="var(--ref)"/>
+      </g>
+      <g font-family="Archivo, Arial, sans-serif" font-weight="800" text-anchor="middle" fill="currentColor" style="font-stretch:80%">
+        <text x="128" y="150" font-size="30">1</text>
+        <text x="394" y="138" font-size="44">28</text>
+        <text x="260" y="356" font-size="38">13</text>
+        <text x="260" y="114" font-size="30">11</text>
+        <text x="186" y="252" font-size="26">5</text>
+        <text x="334" y="252" font-size="26">6</text>
+        <text x="260" y="206" font-size="26">2</text>
+      </g>
+      <g font-family="IBM Plex Mono, monospace" font-size="12.5" text-anchor="middle" letter-spacing=".06em">
+        <text x="92" y="30" fill="var(--expert)">EXPERT · 19</text>
+        <text x="428" y="30" fill="var(--ai)">AI · 47</text>
+        <text x="260" y="432" fill="var(--ref)">REFEREES · 26</text>
+      </g>
+    </svg>
+    <figcaption>Who raised what: 66 distinct issues after merging duplicates. Each source’s total counts every region it covers, so 19 + 47 + 26 exceeds 66. These are counts of issues of mixed size and severity; see “Reading the issue counts”. Circles are not drawn to scale.</figcaption>
+  </figure>
+  <div>
+    <div class="tiles">
+      <div class="tile"><div class="n a">11<span style="font-size:.5em;color:var(--muted)"> / 16</span></div><div class="t">critical key issues the model found fully or partly over three runs (7 fully)</div></div>
+      <div class="tile"><div class="n r">6<span style="font-size:.5em;color:var(--muted)"> / 16</span></div><div class="t">of the same critical issues raised by the journal’s three referees</div></div>
+      <div class="tile"><div class="n" style="color:var(--flag)">6</div><div class="t">of my 19 key issues missed in all three runs</div></div>
+      <div class="tile"><div class="n">29%</div><div class="t">of the model’s 180 comments left unscored because checking them was too costly</div></div>
+    </div>
+  </div>
+</div>
+
+<section>
+  <div class="col">
+    <div class="label">Why this matters</div>
+    <h2>A referee you cannot fully check</h2>
+    <p>Models are already used to read and critique scientific work. They are fast and broad, and most of what they say is right. The risk sits in the rest: a confident review that misses the one physical problem a specialist would see, read by someone who cannot tell that anything is missing. As models comment on more ground than any single expert covers, checking them gets harder. That is the scalable-oversight problem, and a referee report is a concrete, scoreable place to study it.</p>
+  </div>
+</section>
+
+<section>
+  <div class="label">Design</div>
+  <h2>Three reviews of the same paper</h2>
+  <div class="cite col">Cao, N., Zhang, Y., Gu, X. &amp; Wu, M. Efficient recycling of spent Li-ion battery cathodes by laser-induced high-temperature thermal shock. <em>Nature Communications</em> <strong>16</strong>, 7169 (2025). <a href="https://doi.org/10.1038/s41467-025-62434-1">doi:10.1038/s41467-025-62434-1</a></div>
+  <p class="col" style="margin-top:14px">The paper is open access and was published with its peer-review file. It lies within my own field of laser materials processing and battery recycling.</p>
+  <div class="sources">
+    <div class="card e"><div class="who e">Expert answer key</div><p>My own list of issues, written and frozen before any model run: 19 issues, 16 rated critical, each with a severity and an error category.</p></div>
+    <div class="card a"><div class="who a">AI · Claude Opus 5.5</div><p>Main text and supplementary information, the same one-line referee prompt, three independent runs, each in a new session with no prior context. 180 comments.</p></div>
+    <div class="card r"><div class="who r">Journal referees</div><p>The published peer-review file: three referees, two rounds of revision, and the authors’ responses.</p></div>
+  </div>
+  <div class="note col" style="margin-top:22px"><strong>Disclosure.</strong> I have a Matters Arising on this paper under editorial consideration at the journal. Until that process ends, this page does not reproduce its scientific arguments: my 19 issues are described here by topic and error category only. The full issue list is available to reviewers on request.</div>
+</section>
+
+<section>
+  <div class="label">Method</div>
+  <h2>Protocol, ratings and metrics</h2>
+  <div class="grid2">
+    <div>
+      <h3>Protocol</h3>
+      <ul class="plain">
+        <li>Answer key written and frozen before any model run.</li>
+        <li>Prompt, verbatim: <span class="mono">“Please review this paper as a referee for Nature Communications.”</span> Main PDF and supplementary information attached, identical in every run.</li>
+        <li>Three runs, each in a new session outside the project used to design the study.</li>
+        <li>An earlier pilot run in a session that already held study context was excluded from all metrics.</li>
+      </ul>
+      <h3 style="margin-top:16px">Rating each AI comment</h3>
+      <table>
+        <thead><tr><th>Rating</th><th>Meaning</th></tr></thead>
+        <tbody>
+          <tr><td class="id">Hit</td><td>Matches an answer-key issue in substance</td></tr>
+          <tr><td class="id">Partial</td><td>Touches an answer-key issue but is incomplete or partly wrong</td></tr>
+          <tr><td class="id">New valid</td><td>Not on the key, and correct after checking</td></tr>
+          <tr><td class="id">False alarm</td><td>Wrong, or not a real problem</td></tr>
+          <tr><td class="id">Unscored</td><td>Checking it would take extensive reference work, for example matching spectra or reproducing a calculation</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div>
+      <h3>Metrics</h3>
+      <p style="font-size:15.5px;margin-bottom:4px"><strong>Recall</strong> is measured on the 19 answer-key issues. An issue counts as fully found in a run if any comment in that run is a hit on it, and partly found if the best match is a partial.</p>
+      <div class="formula">Recall (per run) = (fully found + 0.5 × partly found) ÷ 19</div>
+      <p style="font-size:15.5px;margin-bottom:4px">Across runs, I report two union counts:</p>
+      <div class="formula">Union, full = issues fully found in ≥ 1 run<br>Union, full or partial = issues fully or partly found in ≥ 1 run</div>
+      <p style="font-size:15.5px;margin-bottom:4px"><strong>Precision</strong> is measured on comments, not issues. Unscored comments are excluded from the denominator.</p>
+      <div class="formula">Precision = (hit + partial + new valid) ÷ (comments − unscored)</div>
+      <p style="font-size:15px">Recall and precision therefore use different units: recall counts key issues, precision counts the model’s comments. A partial comment counts as correct for precision and as half an issue for recall.</p>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="label">Results</div>
+  <h2>Run by run</h2>
+  <div class="scroll">
+  <table>
+    <thead><tr><th>Run</th><th class="r">Comments</th><th class="r">Hit</th><th class="r">Partial</th><th class="r">New valid</th><th class="r">False alarm</th><th class="r">Unscored</th><th class="r">Precision</th><th class="r">Key issues full / partial</th><th class="r">Recall</th><th class="r">Recall, critical</th></tr></thead>
+    <tbody class="num">
+      <tr><td class="id">1</td><td>58</td><td>7</td><td>6</td><td>24</td><td>3</td><td>18</td><td>92.5%</td><td>7 / 5</td><td>50%</td><td>47%</td></tr>
+      <tr><td class="id">2</td><td>59</td><td>8</td><td>7</td><td>26</td><td>2</td><td>16</td><td>95.3%</td><td>8 / 4</td><td>53%</td><td>50%</td></tr>
+      <tr><td class="id">3</td><td>63</td><td>6</td><td>5</td><td>30</td><td>4</td><td>18</td><td>91.1%</td><td>6 / 4</td><td>42%</td><td>38%</td></tr>
+      <tr class="tot"><td class="id">All</td><td>180</td><td>21</td><td>18</td><td>80</td><td>9</td><td>52</td><td>93.0%</td><td>9 / 4</td><td colspan="2">union 13 of 19</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p style="font-size:14px;color:var(--muted);margin-top:8px">Hit and Partial columns count comments; “Key issues full / partial” counts answer-key issues. In the All row, 9 key issues were fully found in at least one run and 4 more only partly, in every run that touched them.</p>
+  <div class="grid2" style="margin-top:18px">
+    <div>
+      <h3>Union over three runs</h3>
+      <table>
+        <thead><tr><th></th><th class="r">All 19</th><th class="r">Critical 16</th></tr></thead>
+        <tbody class="num">
+          <tr><td>Fully found in ≥ 1 run</td><td>9 (47%)</td><td>7 (44%)</td></tr>
+          <tr><td>Fully or partly found</td><td>13 (68%)</td><td>11 (69%)</td></tr>
+          <tr><td>Never found</td><td>6 (32%)</td><td>5 (31%)</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div>
+      <h3>Consistency across runs</h3>
+      <p>Of the 19 key issues, 10 were found fully or partly in all three runs, 1 in two runs, 2 in one run, and 6 in none. Combining runs raised the number fully found from 6–8 in a single run to 9, and the number touched at least partly from 10–12 to 13. The same six issues were missed every time.</p>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="label">Coverage</div>
+  <h2>Comparison with the referees</h2>
+  <div class="grid2">
+    <div class="bars">
+      <div class="barset">
+        <h3>Critical key issues found <span class="mono" style="color:var(--muted);font-weight:400">of 16</span></h3>
+        <div class="bar"><span class="e">Expert</span><div class="track"><div class="fill e" style="width:100%"></div></div><span class="v">16</span></div>
+        <div class="bar"><span class="a">AI</span><div class="track"><div class="fill a" style="width:43.75%"></div><div class="fill part" style="left:43.75%;width:25%"></div></div><span class="v">7 + 4</span></div>
+        <div class="bar"><span class="r">Referees</span><div class="track"><div class="fill r" style="width:37.5%"></div></div><span class="v">6</span></div>
+        <p style="font-size:13.5px;color:var(--muted);margin:6px 0 0">AI: solid = fully found, hatched = partly found only. Referee comments were mapped to key issues on any substantive overlap, which corresponds to the AI’s “fully or partly” count.</p>
+      </div>
+    </div>
+    <div>
+      <p>On the frozen key, and counting any substantive overlap as for the referees, the model found 11 of the 16 critical issues and the referees raised 6. Only 7 of the model’s 11 were full matches. Referee comments were not graded for completeness, so a stricter like-for-like comparison is not available from this data.</p>
+      <p>The two sources also covered different ground. The 11 key issues found by the model and not by the referees fall in thermal-history reporting (4), product characterization and mass balance (2), leaching metrics (2) and the techno-economic basis (3). The model was strongest where an issue can be found by checking the paper against itself: numbers, units, stated conditions and internal consistency.</p>
+    </div>
+  </div>
+
+  <h3 style="margin-top:28px">Reading the issue counts</h3>
+  <div class="grid2">
+    <div class="bars">
+      <div class="barset">
+        <div class="bar"><span class="e">Expert</span><div class="track"><div class="fill e" style="width:28.8%"></div></div><span class="v">19</span></div>
+        <div class="bar"><span class="a">AI</span><div class="track"><div class="fill a" style="width:71.2%"></div></div><span class="v">47</span></div>
+        <div class="bar"><span class="r">Referees</span><div class="track"><div class="fill r" style="width:39.4%"></div></div><span class="v">26</span></div>
+        <p style="font-size:13.5px;color:var(--muted);margin:6px 0 0">Distinct issues raised, of 66 in total.</p>
+      </div>
+    </div>
+    <div>
+      <p>These totals describe coverage. They are not a like-for-like score:</p>
+      <ul class="plain">
+        <li>The 34 issues the model raised beyond the key were merged by topic, and some merge several small points, such as typographical errors, into one row.</li>
+        <li>Of the 13 issues only the referees raised, 11 are minor: citations, figure presentation, typographical errors.</li>
+        <li>Severity of the new issues was proposed with AI assistance and confirmed by me.</li>
+      </ul>
+      <p>The comparison that carries weight is recall against the frozen key, above.</p>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="label">Consistency</div>
+  <h2>My 19 issues, run by run</h2>
+  <p class="col">Issues are grouped by topic and labelled with their error category; their specific content is withheld (see Disclosure). Rows marked in red were missed in all three runs.</p>
+  <div class="legend">
+    <span><i class="d y"></i> fully found</span><span><i class="d p"></i> partly found</span><span><i class="d n"></i> missed</span><span><i class="d ry"></i> raised by a referee</span><span><i class="stripe"></i> missed in all three runs</span>
+  </div>
+  <div class="scroll">
+  <table>
+    <thead><tr><th>ID</th><th>Error category</th><th>Severity</th><th class="dot">Run 1</th><th class="dot">Run 2</th><th class="dot">Run 3</th><th class="dot">Referees</th></tr></thead>
+    <tbody id="matrix"></tbody>
+  </table>
+  </div>
+</section>
+
+<section>
+  <div class="label">The blind spot</div>
+  <h2>Process physics and scale-up</h2>
+  <div class="grid2">
+    <div>
+      <table>
+        <thead><tr><th>Missed in all runs</th><th>Topic</th><th>Error category</th></tr></thead>
+        <tbody>
+          <tr><td class="id">P1-02</td><td>Thermal history</td><td class="cat">Methods and controls</td></tr>
+          <tr><td class="id">P1-06</td><td>Product characterization</td><td class="cat">Characterization</td></tr>
+          <tr><td class="id">P1-09</td><td>Product characterization</td><td class="cat">Characterization</td></tr>
+          <tr><td class="id">P1-17</td><td>Scale-up</td><td class="cat">Techno-economic analysis</td></tr>
+          <tr><td class="id">P1-18</td><td>Scale-up</td><td class="cat">Techno-economic analysis</td></tr>
+          <tr><td class="id">P1-19</td><td>Scale-up</td><td class="cat">Techno-economic analysis</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div>
+      <p>None of the six can be found by comparing the paper’s statements with one another. Each requires asking what physically happens to the material during laser processing, or whether a laboratory result carries over to the proposed industrial scale.</p>
+      <p>The model treated the paper as a set of statements to cross-check, and it was careful at that. It did not test the physical process behind the statements. Five of the six were raised by at least one referee, so they are within reach of a human reviewer. The gap looks like a missing habit of physical reasoning, not missing information in the paper.</p>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="label">By category</div>
+  <h2>Who raised which kind of issue</h2>
+  <p class="col">Counts of distinct issues in each category, all 66 issues. The model raised the most issues in techno-economic analysis, methods and internal consistency. The referees raised the most in characterization interpretation.</p>
+  <div class="legend"><span><i class="d y" style="border-color:var(--expert);background:var(--expert)"></i> Expert</span><span><i class="d y"></i> AI</span><span><i class="d ry"></i> Referees</span></div>
+  <div class="cats" id="cats"></div>
+</section>
+
+<section>
+  <div class="label">The oversight gap</div>
+  <h2>What one expert cannot cheaply check</h2>
+  <div class="col">
+    <p>52 of the 180 comments (29%) concerned specialized spectroscopy and computational analysis. Checking each properly would take extensive reference work, so I left them unscored. They are excluded from precision, which therefore describes only the comments I could check.</p>
+    <p>When I did spend the time on two of them, a sign inconsistency between text and figure and an instrument setting too narrow for the claim, both held up. So “cannot verify” was often “costly to verify”. Where an overseer draws that line decides how much of a model’s output is actually checked.</p>
+  </div>
+</section>
+
+<section>
+  <div class="label">Auditing the AI-assisted scoring</div>
+  <h2>The evaluation tool made an error too</h2>
+  <div class="col">
+    <p>I used Claude to help organize the scoring: merging duplicate comments into distinct issues, mapping referee comments onto issues, and aligning ratings across runs. I then reviewed every proposed change, 67 in all.</p>
+    <p>One was wrong. Claude reported that two figures gave different oxidation states for the same element and changed a false alarm into a valid issue; both figures in fact showed the same state. I reverted it. The other proposals held. Model assistance sped up the work, and a specialist still had to check it.</p>
+  </div>
+</section>
+
+<section>
+  <div class="label">Implications</div>
+  <h2>What this suggests for scalable oversight</h2>
+  <ol class="findings col">
+    <li><strong>Breadth hides gaps.</strong> A review that covers more ground than the expert’s own looks complete. Its omissions are invisible to a reader who does not already know what to look for.</li>
+    <li><strong>Resampling does not fix systematic blind spots.</strong> Combining three runs added one to three fully found issues over a single run, but the six missed issues were the same every time.</li>
+    <li><strong>Partial matches flatter coverage.</strong> Four of the model’s eleven critical matches only pointed at the issue without getting it right, in every run. Scoring has to separate a full catch from a near miss, for the model and for human reviewers alike.</li>
+    <li><strong>Verification cost is the binding constraint.</strong> Nearly a third of the output was costly for a domain expert to check. Oversight methods need to make checking cheaper, not only more frequent.</li>
+    <li><strong>Expert answer keys are reusable.</strong> A frozen, categorized issue list turns a referee task into a measurement, and could serve as a grading rubric for training as well as for evaluation.</li>
+  </ol>
+</section>
+
+<section>
+  <div class="label">Limits</div>
+  <h2>What this does and does not show</h2>
+  <ul class="plain col">
+    <li>One paper, one model, one rater. The numbers describe this case and should not be read as general rates.</li>
+    <li>I am not a neutral rater: I wrote the answer key and have a Matters Arising on the same paper.</li>
+    <li>Ratings were not blind: I knew which source each comment came from.</li>
+    <li>Unscored comments are excluded from precision, which therefore applies only to comments within my competence to check.</li>
+    <li>Referee coverage is measured from the published file, so it counts what referees wrote, not everything they may have considered.</li>
+  </ul>
+</section>
+
+<section>
+  <div class="label">Next</div>
+  <h2>Questions this leaves</h2>
+  <div class="q">
+    <div class="card"><h3>Does it hold beyond one paper?</h3><p style="font-size:15px;margin:0">More papers, models and expert raters, with flaws planted so the ground truth is known. Which error types are missed most?</p></div>
+    <div class="card"><h3>Instructions or capability?</h3><p style="font-size:15px;margin:0">If prompts aimed at process physics do not close the gap on held-out papers, the rest points to training, where expert rubrics could serve as grading signals.</p></div>
+    <div class="card"><h3>Honest under pushback?</h3><p style="font-size:15px;margin:0">How often does a model give up a correct point when an expert objects wrongly, and does it flag doubt where it is most often wrong?</p></div>
+  </div>
+</section>
+
+<footer>
+  <p><strong>Materials.</strong> Available to reviewers on request: the frozen answer key, the raw model outputs and the scoring workbook. The Matters Arising manuscript is not shared while it is under editorial consideration.</p>
+  <p><strong>Tools.</strong> Model under test: Claude Opus 5.5, November 2026. Claude also assisted with organizing the scoring and drafting this page; all ratings, numbers and conclusions were checked by the author.</p>
+  <p>James Chen · November 2026</p>
+</footer>
+
+</div>
+<script>
+(function(){
+  var groups=[
+    ["Thermal history and process reporting",[
+      ["P1-01","Internal inconsistency","Critical","yyy",0],
+      ["P1-02","Methods and controls","Critical","nnn",0],
+      ["P1-03","Methods and controls","Critical","yyy",0],
+      ["P1-04","Mechanism and theory","Critical","ppp",0],
+      ["P1-05","Mechanism and theory","Critical","ppp",0]]],
+    ["Product characterization and mass balance",[
+      ["P1-06","Characterization interpretation","Critical","nnn",1],
+      ["P1-07","Characterization interpretation","Critical","ppp",1],
+      ["P1-08","Mechanism and theory","Critical","pyn",0],
+      ["P1-09","Characterization interpretation","Critical","nnn",1],
+      ["P1-10","Characterization interpretation","Major","yyy",0]]],
+    ["Leaching-efficiency metrics",[
+      ["P1-11","Methods and controls","Critical","ynn",0],
+      ["P1-12","Techno-economic analysis","Critical","ppp",0]]],
+    ["Techno-economic basis",[
+      ["P1-13","Techno-economic analysis","Critical","yyy",0],
+      ["P1-14","Techno-economic analysis","Critical","nyn",1],
+      ["P1-15","Techno-economic analysis","Critical","yyy",0],
+      ["P1-16","Techno-economic analysis","Major","yyy",0]]],
+    ["Scale-up",[
+      ["P1-17","Techno-economic analysis","Critical","nnn",1],
+      ["P1-18","Techno-economic analysis","Critical","nnn",1],
+      ["P1-19","Techno-economic analysis","Major","nnn",1]]]
+  ];
+  var tb=document.getElementById("matrix"),h="";
+  groups.forEach(function(g){
+    h+='<tr class="grp"><td colspan="7">'+g[0]+'</td></tr>';
+    g[1].forEach(function(r){
+      var miss=r[3]==="nnn";
+      h+='<tr'+(miss?' class="miss"':'')+'><td class="id">'+r[0]+'</td><td class="cat">'+r[1]+'</td><td class="sev">'+r[2]+'</td>';
+      for(var i=0;i<3;i++){var c=r[3][i];var t=c==="y"?"fully found":c==="p"?"partly found":"missed";h+='<td class="dot"><i class="d '+c+'" title="Run '+(i+1)+': '+t+'" aria-label="Run '+(i+1)+': '+t+'"></i></td>';}
+      h+='<td class="dot"><i class="d '+(r[4]?"ry":"rn")+'" aria-label="'+(r[4]?"raised by a referee":"not raised by a referee")+'"></i></td></tr>';
+    });
+  });
+  tb.innerHTML=h;
+
+  var cats=[["Techno-economics / life-cycle",15,8,11,5],["Characterization interpretation",14,4,7,9],["Other (novelty, wording, figures, references)",12,0,8,6],["Methods and controls",10,3,8,1],["Internal inconsistency",6,1,5,3],["Mechanism and theory",6,3,5,1],["Numbers and arithmetic",2,0,2,1],["Safety and environment",1,0,1,0]];
+  var max=15,ch="";
+  var cls=[["e","Expert"],["a","AI"],["r","Referees"]];
+  cats.forEach(function(c){
+    ch+='<div class="cat"><div class="nm">'+c[0]+' <span class="mono">'+c[1]+'</span></div><div class="mini">';
+    for(var i=0;i<3;i++){ch+='<div class="row"><div class="track" aria-label="'+cls[i][1]+' '+c[i+2]+'"><div class="fill '+cls[i][0]+'" style="width:'+(c[i+2]/max*100)+'%"></div></div><span class="v">'+c[i+2]+'</span></div>';}
+    ch+='</div></div>';
+  });
+  document.getElementById("cats").innerHTML=ch;
+})();
+</script>
+</body>
+</html>
